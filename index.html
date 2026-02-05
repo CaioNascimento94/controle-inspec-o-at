@@ -3,295 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>INSPEÇÃO PRO V26 - ALERTAS REVISADOS</title>
+    <title>INSPEÇÃO PRO V28 - LOGIN CASE SENSITIVE</title>
     <style>
         :root {
             --bg: #022C22; --card-bg: #064E3B; --text: #F8FAFC;
             --primary: #10B981; --border: #059669;
-            --status-purple: #A855F7; /* VENCIDO */
-            --status-red: #EF4444;    /* < 15 DIAS */
-            --status-orange: #F97316; /* 16-30 DIAS */
-            --status-yellow: #FACC15; /* 31-60 DIAS */
-            --status-green: #22C55E;  /* > 60 DIAS */
+            --status-purple: #A855F7; --status-red: #EF4444; --status-orange: #F97316;
+            --status-yellow: #FACC15; --status-green: #22C55E;
         }
 
-        body, input, select, textarea, button, table { text-transform: uppercase; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); color: var(--text); padding: 0; margin: 0; }
+        /* REGRA GERAL DE MAIÚSCULAS */
+        body, input, select, textarea, button, table { text-transform: uppercase; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 0; margin: 0; }
         
-        #mainContent { padding: 10px; display: block; }
+        /* EXCEÇÃO PARA CAMPOS DE LOGIN (E-MAIL E SENHA) */
+        #loginEmail, #loginPass { text-transform: none !important; }
+
+        /* TELA DE LOGIN */
+        #loginScreen { display: flex; align-items: center; justify-content: center; height: 100vh; background: var(--bg); }
+        .login-card { background: var(--card-bg); padding: 30px; border-radius: 12px; border: 1px solid var(--border); width: 100%; max-width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .login-card h2 { font-size: 1rem; margin-bottom: 20px; color: #FFF; }
+        .login-card input { margin-bottom: 12px; padding: 12px; background: #022C22; border: 1px solid var(--border); color: white; border-radius: 6px; width: 100%; box-sizing: border-box; }
+        .btn-login { background: var(--primary); color: white; border: none; padding: 12px; cursor: pointer; width: 100%; font-weight: bold; border-radius: 6px; font-size: 0.8rem; }
+        #loginError { color: #EF4444; font-size: 0.7rem; margin-top: 10px; display: none; font-weight: bold; }
+
+        /* SISTEMA PRINCIPAL */
+        #mainContent { display: none; padding: 10px; }
         .container { max-width: 100%; margin: 0 auto; }
         .card { background: var(--card-bg); padding: 12px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; }
-        h2 { margin-top: 0; color: #FFF; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; margin-bottom: 10px; }
+        h2 { margin-top: 0; color: #FFF; font-size: 0.85rem; margin-bottom: 10px; }
 
         .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 12px; }
-        .stat-box { padding: 8px; border-radius: 6px; text-align: center; font-weight: bold; font-size: 0.65rem; border: 1px solid rgba(255,255,255,0.05); }
+        .stat-box { padding: 8px; border-radius: 6px; text-align: center; font-weight: bold; font-size: 0.62rem; border: 1px solid rgba(255,255,255,0.05); }
 
-        .form-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 6px; margin-bottom: 5px; }
-        input, button, select { padding: 6px; border: 1px solid var(--border); border-radius: 4px; background: #022C22; color: WHITE; font-size: 0.68rem; width: 100%; box-sizing: border-box; }
+        .form-group { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 6px; }
+        input, button, select { padding: 6px; border: 1px solid var(--border); border-radius: 4px; background: #022C22; color: WHITE; font-size: 0.65rem; width: 100%; box-sizing: border-box; }
         
         .manager-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px; }
         .tag-list { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
-        .tag { background: #064E3B; border: 1px solid var(--primary); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 5px; font-size: 0.6rem; }
+        .tag { background: #064E3B; border: 1px solid var(--primary); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 5px; font-size: 0.58rem; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 5px; table-layout: auto; }
-        th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); font-size: 0.62rem; line-height: 1; }
-        th { background: #022C22; color: #D1FAE5; vertical-align: top; white-space: nowrap; }
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); font-size: 0.6rem; line-height: 1.1; }
+        th { background: #022C22; color: #D1FAE5; }
 
-        .filter-row { font-size: 0.52rem; padding: 2px; background: #022C22; border: 1px solid #10B981; margin-top: 3px; color: white; height: 18px; width: 100%; box-sizing: border-box; }
+        .filter-row { font-size: 0.52rem; padding: 2px; background: #022C22; border: 1px solid #10B981; margin-top: 3px; }
 
-        .status { padding: 2px 4px; border-radius: 3px; font-size: 0.55rem; font-weight: 900; color: #FFF; display: inline-block; min-width: 50px; text-align: center; }
+        .status { padding: 2px 4px; border-radius: 3px; font-size: 0.55rem; font-weight: 900; color: #FFF; display: inline-block; min-width: 45px; text-align: center; }
         .aviso-vencido { background-color: var(--status-purple); }
         .aviso-vermelho { background-color: var(--status-red); }
         .aviso-laranja { background-color: var(--status-orange); }
         .aviso-amarelo { background-color: var(--status-yellow); color: #000 !important; }
         .status-ok { background-color: var(--status-green); }
 
-        .btn-add { background: var(--primary); font-weight: bold; border: none; cursor: pointer; color: white; height: 100%; }
-        .btn-sort { background: #F59E0B; color: #000; font-weight: 900; width: auto; padding: 3px 6px; cursor: pointer; border-radius: 4px; border: none; font-size: 0.58rem; }
-        
-        .btn-action { background: #6B7280; font-size: 0.5rem; padding: 2px 4px; border-radius: 2px; cursor: pointer; border: none; color: white; display: inline-block; margin-right: 1px; min-width: 25px; }
-        .btn-concluir { background: #059669; }
-        .btn-excluir { background: #991B1B; }
-        .btn-view { background: #0891B2; text-decoration: none; color: white; padding: 2px 4px; border-radius: 2px; font-size: 0.5rem; }
-
-        .table-tools { display: flex; gap: 3px; align-items: center; }
+        .btn-add { background: var(--primary); font-weight: bold; border: none; cursor: pointer; color: white; }
+        .btn-sort { background: #F59E0B; color: #000; font-weight: 900; width: auto; padding: 3px 6px; cursor: pointer; border-radius: 4px; border: none; font-size: 0.55rem; }
+        .btn-action { background: #6B7280; font-size: 0.48rem; padding: 2px 4px; border-radius: 2px; cursor: pointer; border: none; color: white; margin-right: 1px; }
         .btn-tool { font-size: 0.52rem; padding: 2px 5px; width: auto; background: #022C22; border: 1px solid #10B981; color: white; cursor: pointer; border-radius: 3px; }
     </style>
 </head>
 <body>
 
-<div id="mainContent">
-    <div class="container">
-        <header style="margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
-            <h1 style="font-size: 0.9rem; color: #FFF; margin: 0;">🛡️ INSPEÇÃO PRO V26 - ALERTAS REVISADOS</h1>
-        </header>
-
-        <div class="manager-row">
-            <div class="card">
-                <h2>🏢 UNIDADE</h2>
-                <div style="display: flex; gap: 5px;"><input type="text" id="newUnitName" placeholder="NOME"><button class="btn-add" onclick="addUnit()" style="width: 40px;">ADD</button></div>
-                <div id="unitList" class="tag-list"></div>
-            </div>
-            <div class="card">
-                <h2>🛠️ ATIVIDADE</h2>
-                <div style="display: flex; gap: 5px;"><input type="text" id="newActivityName" placeholder="TIPO"><button class="btn-add" onclick="addActivity()" style="width: 40px;">ADD</button></div>
-                <div id="activityList" class="tag-list"></div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>➕ NOVO REGISTRO</h2>
-            <div class="form-group">
-                <input type="text" id="equip" placeholder="EQUIPAMENTO">
-                <select id="unitSelect"></select>
-                <select id="activitySelect"></select>
-                <input type="date" id="lastDate">
-                <input type="number" id="period" placeholder="DIAS">
-                <input type="text" id="rmaf" placeholder="Nº RM/AF">
-                <input type="file" id="pdfFile">
-                <button class="btn-add" onclick="addItem()">SALVAR</button>
-            </div>
-        </div>
-
-        <div class="stats-container" id="statsPanel"></div>
-
-        <div class="card" style="padding: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 5px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <button class="btn-sort" onclick="toggleSort()">🔄 <span id="sortLabel">CADASTRO</span></button>
-                    <h2 style="margin:0; font-size: 0.85rem;">📋 MONITORAMENTO GERAL</h2>
-                </div>
-                <div class="table-tools">
-                    <button class="btn-tool" onclick="exportToCSV()">📊 EXCEL</button>
-                    <button class="btn-tool" onclick="exportBackup()" style="background:#1E40AF">💾 BACKUP</button>
-                    <button class="btn-tool" onclick="document.getElementById('importFile').click()" style="background:#5B21B6">📂 RESTAURAR</button>
-                    <input type="file" id="importFile" style="display:none" onchange="importBackup(this)">
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 15%;">EQUIPAMENTO<br><input type="text" id="f0" onkeyup="saveAndRender()" class="filter-row"></th>
-                        <th style="width: 10%;">UNID.<br><input type="text" id="f1" onkeyup="saveAndRender()" class="filter-row"></th>
-                        <th style="width: 10%;">ATIV.<br><input type="text" id="f2" onkeyup="saveAndRender()" class="filter-row"></th>
-                        <th style="width: 8%;">CAD.<br><input type="text" id="fCad" onkeyup="saveAndRender()" class="filter-row"></th>
-                        <th style="width: 8%;">ULT.<br><input type="text" id="fUlt" onkeyup="saveAndRender()" class="filter-row"></th>
-                        <th style="width: 8%;">PROX.<br><input type="text" id="fProx" onkeyup="saveAndRender()" class="filter-row"></th>
-                        <th style="width: 8%;">STATUS<br><input type="text" id="f3" onkeyup="saveAndRender()" class="filter-row"></th>
-                        <th style="width: 5%;">ANX</th>
-                        <th style="width: 10%;">RM/AF<br><input type="text" id="f4" onkeyup="saveAndRender()" class="filter-row"></th>
-                        <th style="width: 8%;">AÇÃO</th>
-                    </tr>
-                </thead>
-                <tbody id="inventoryBody"></tbody>
-            </table>
+    <div id="loginScreen">
+        <div class="login-card">
+            <h2>🛡️ INSPEÇÃO PRO - LOGIN</h2>
+            <input type="email" id="loginEmail" placeholder="e-mail">
+            <input type="password" id="loginPass" placeholder="senha">
+            <button class="btn-login" id="btnLogin">ENTRAR NO SISTEMA</button>
+            <p id="loginError">ERRO NO ACESSO</p>
         </div>
     </div>
-</div>
 
-<script>
-    let db = JSON.parse(localStorage.getItem('inspections_v26')) || [];
-    let units = JSON.parse(localStorage.getItem('units_v26')) || ["GERAL"];
-    let acts = JSON.parse(localStorage.getItem('acts_v26')) || ["INSPEÇÃO"];
-    let currentSort = "ORIGINAL";
+    <div id="mainContent">
+        <div class="container">
+            <header style="margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                <h1 style="font-size: 0.85rem; color: #FFF; margin: 0;">🛡️ INSPEÇÃO PRO V28</h1>
+                <button onclick="logout()" style="width: auto; background: #991B1B; font-size: 0.55rem; padding: 4px 8px;">SAIR</button>
+            </header>
 
-    function toggleSort() {
-        currentSort = (currentSort === "ORIGINAL") ? "VENCIMENTO" : "ORIGINAL";
-        document.getElementById('sortLabel').innerText = (currentSort === "ORIGINAL") ? "CADASTRO" : "VENCIMENTO";
-        saveAndRender();
-    }
+            <div class="manager-row">
+                <div class="card">
+                    <h2>🏢 UNIDADE</h2>
+                    <div style="display: flex; gap: 5px;"><input type="text" id="newUnitName" placeholder="NOME"><button class="btn-add" id="btnAddUnit" style="width: 40px;">ADD</button></div>
+                    <div id="unitList" class="tag-list"></div>
+                </div>
+                <div class="card">
+                    <h2>🛠️ ATIVIDADE</h2>
+                    <div style="display: flex; gap: 5px;"><input type="text" id="newActivityName" placeholder="TIPO"><button class="btn-add" id="btnAddAct" style="width: 40px;">ADD</button></div>
+                    <div id="activityList" class="tag-list"></div>
+                </div>
+            </div>
 
-    function renderManagers() {
-        localStorage.setItem('units_v26', JSON.stringify(units));
-        localStorage.setItem('acts_v26', JSON.stringify(acts));
-        const ul = document.getElementById('unitList'), al = document.getElementById('activityList');
-        const us = document.getElementById('unitSelect'), as = document.getElementById('activitySelect');
-        ul.innerHTML = al.innerHTML = '';
-        us.innerHTML = '<option value="">UNID...</option>';
-        as.innerHTML = '<option value="">ATIV...</option>';
-        units.forEach(u => {
-            ul.innerHTML += `<div class="tag">${u} <button onclick="delUnit('${u}')" style="background:none; border:none; color:#EF4444; cursor:pointer;">✕</button></div>`;
-            us.innerHTML += `<option value="${u}">${u}</option>`;
-        });
-        acts.forEach(a => {
-            al.innerHTML += `<div class="tag">${a} <button onclick="delAct('${a}')" style="background:none; border:none; color:#EF4444; cursor:pointer;">✕</button></div>`;
-            as.innerHTML += `<option value="${a}">${a}</option>`;
-        });
-    }
+            <div class="card">
+                <h2>➕ NOVO REGISTRO</h2>
+                <div class="form-group">
+                    <input type="text" id="equip" placeholder="EQUIPAMENTO">
+                    <select id="unitSelect"></select>
+                    <select id="activitySelect"></select>
+                    <input type="date" id="lastDate">
+                    <input type="number" id="period" placeholder="DIAS">
+                    <input type="text" id="rmaf" placeholder="Nº RM/AF">
+                    <input type="file" id="pdfFile">
+                    <button class="btn-add" id="btnSaveItem">SALVAR</button>
+                </div>
+            </div>
 
-    function addUnit() { const v = document.getElementById('newUnitName').value.trim().toUpperCase(); if(v){ units.push(v); renderManagers(); } document.getElementById('newUnitName').value=''; }
-    function delUnit(u) { units = units.filter(i => i !== u); renderManagers(); }
-    function addActivity() { const v = document.getElementById('newActivityName').value.trim().toUpperCase(); if(v){ acts.push(v); renderManagers(); } document.getElementById('newActivityName').value=''; }
-    function delAct(a) { acts = acts.filter(i => i !== a); renderManagers(); }
+            <div class="stats-container" id="statsPanel"></div>
 
-    async function addItem() {
-        const file = document.getElementById('pdfFile').files[0];
-        const item = {
-            id: Date.now(),
-            name: document.getElementById('equip').value.toUpperCase(),
-            unit: document.getElementById('unitSelect').value,
-            act: document.getElementById('activitySelect').value,
-            last: document.getElementById('lastDate').value,
-            created: new Date().toISOString().split('T')[0],
-            period: parseInt(document.getElementById('period').value),
-            rmaf: document.getElementById('rmaf').value.toUpperCase(),
-            anexo: file ? await toB64(file) : null
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <button class="btn-sort" id="btnToggleSort">🔄 ORDEM: <span id="sortLabel">CADASTRO</span></button>
+                    <div style="display: flex; gap: 3px;">
+                        <button class="btn-tool" id="btnExport">📊 EXCEL</button>
+                        <button class="btn-tool" id="btnBackup" style="background:#1E40AF">💾 BACKUP</button>
+                        <button class="btn-tool" id="btnRestore" style="background:#5B21B6">📂 RESTAURAR</button>
+                        <input type="file" id="importFile" style="display:none">
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>EQUIPAMENTO<br><input type="text" id="f0" class="filter-row"></th>
+                            <th>UNID.<br><input type="text" id="f1" class="filter-row"></th>
+                            <th>ATIV.<br><input type="text" id="f2" class="filter-row"></th>
+                            <th>CAD.<br><input type="text" id="fCad" class="filter-row"></th>
+                            <th>ULT.<br><input type="text" id="fUlt" class="filter-row"></th>
+                            <th>PROX.<br><input type="text" id="fProx" class="filter-row"></th>
+                            <th>STATUS<br><input type="text" id="f3" class="filter-row"></th>
+                            <th>ANX</th>
+                            <th>RM/AF<br><input type="text" id="f4" class="filter-row"></th>
+                            <th>AÇÃO</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBP5mj0QtQlpU38vjxIP-KNFfqzRd1XP3w",
+            authDomain: "controle-de-inspecoes-ctp.firebaseapp.com",
+            projectId: "controle-de-inspecoes-ctp",
+            storageBucket: "controle-de-inspecoes-ctp.firebasestorage.app",
+            messagingSenderId: "300049272881",
+            appId: "1:300049272881:web:c535a246d24f547e3a8510",
+            measurementId: "G-DTMKHFYVFE"
         };
-        if(!item.name || !item.last || !item.period) return alert("PREENCHA OS CAMPOS!");
-        db.push(item); saveAndRender();
-        document.getElementById('equip').value = ''; document.getElementById('rmaf').value = '';
-    }
 
-    function saveAndRender() {
-        localStorage.setItem('inspections_v26', JSON.stringify(db));
-        const body = document.getElementById('inventoryBody');
-        const f = [
-            document.getElementById('f0').value.toLowerCase(), document.getElementById('f1').value.toLowerCase(),
-            document.getElementById('f2').value.toLowerCase(), document.getElementById('f3').value.toLowerCase(),
-            document.getElementById('f4').value.toLowerCase(), document.getElementById('fCad').value.toLowerCase(),
-            document.getElementById('fUlt').value.toLowerCase(), document.getElementById('fProx').value.toLowerCase()
-        ];
-        
-        let cVenc = 0, cRoxo = 0, cVerm = 0, cLaran = 0, cAmar = 0, cOk = 0;
-        let displayDb = [...db];
-        
-        if(currentSort === "VENCIMENTO") {
-            displayDb.sort((a,b) => {
-                const nA = new Date(a.last); nA.setDate(nA.getDate() + a.period);
-                const nB = new Date(b.last); nB.setDate(nB.getDate() + b.period);
-                return nA - nB;
-            });
-        } else { displayDb.sort((a,b) => a.id - b.id); }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
 
-        body.innerHTML = '';
-        displayDb.forEach(i => {
-            const nxt = new Date(i.last); nxt.setDate(nxt.getDate() + i.period);
-            const today = new Date().setHours(0,0,0,0);
-            const diff = Math.ceil((nxt - today)/86400000);
-            
-            let statusTxt = "", sc = "";
-
-            if(diff <= 0) { 
-                statusTxt = "VENCIDO"; sc = "aviso-vencido"; cRoxo++;
-            } else if(diff <= 15) {
-                statusTxt = diff + "D"; sc = "aviso-vermelho"; cVerm++;
-            } else if(diff <= 30) {
-                statusTxt = diff + "D"; sc = "aviso-laranja"; cLaran++;
-            } else if(diff <= 60) {
-                statusTxt = diff + "D"; sc = "aviso-amarelo"; cAmar++;
-            } else {
-                statusTxt = diff + "D"; sc = "status-ok"; cOk++;
-            }
-
-            const dtC = new Date(i.created).toLocaleDateString('PT-BR');
-            const dtU = new Date(i.last).toLocaleDateString('PT-BR');
-            const dtP = nxt.toLocaleDateString('PT-BR');
-
-            if(i.name.toLowerCase().includes(f[0]) && i.unit.toLowerCase().includes(f[1]) && 
-               i.act.toLowerCase().includes(f[2]) && statusTxt.toLowerCase().includes(f[3]) && 
-               (i.rmaf||"").toLowerCase().includes(f[4]) && dtC.includes(f[5]) && 
-               dtU.includes(f[6]) && dtP.includes(f[7])) {
-                
-                body.innerHTML += `<tr>
-                    <td><b>${i.name}</b></td><td>${i.unit}</td><td>${i.act}</td><td>${dtC}</td><td>${dtU}</td><td>${dtP}</td>
-                    <td><span class="status ${sc}">${statusTxt}</span></td>
-                    <td>${i.anexo ? `<a href="${i.anexo}" target="_blank" class="btn-view">V</a>` : '-'}</td>
-                    <td>${i.rmaf || "-"}</td>
-                    <td style="white-space: nowrap;">
-                        <button onclick="conclude(${i.id})" class="btn-action btn-concluir">OK</button>
-                        <button onclick="delItem(${i.id})" class="btn-action btn-excluir">EX</button>
-                    </td>
-                </tr>`;
-            }
-        });
-
-        document.getElementById('statsPanel').innerHTML = `
-            <div class="stat-box" style="background: var(--status-purple)">💜 VENCIDO: ${cRoxo}</div>
-            <div class="stat-box" style="background: var(--status-red)">❤️ < 15 DIAS: ${cVerm}</div>
-            <div class="stat-box" style="background: var(--status-orange)">🧡 16-30 DIAS: ${cLaran}</div>
-            <div class="stat-box" style="background: var(--status-yellow); color: #000">💛 31-60 DIAS: ${cAmar}</div>
-            <div class="stat-box" style="background: var(--status-green)">💚 OK (>60): ${cOk}</div>
-        `;
-    }
-
-    function exportToCSV() {
-        let csv = "EQUIPAMENTO;UNIDADE;ATIVIDADE;CADASTRO;ULTIMA;PROXIMA;RM/AF\n";
-        db.forEach(i => {
-            const nxt = new Date(i.last); nxt.setDate(nxt.getDate() + i.period);
-            csv += `${i.name};${i.unit};${i.act};${i.created};${i.last};${nxt.toISOString().split('T')[0]};${i.rmaf || ""}\n`;
-        });
-        const b = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const l = document.createElement("a"); l.href = URL.createObjectURL(b);
-        l.setAttribute("download", "INSPECOES_V26.csv"); l.click();
-    }
-
-    function exportBackup() {
-        const b = { db, units, acts, v: "V26" };
-        const blob = new Blob([JSON.stringify(b)], { type: 'application/json' });
-        const l = document.createElement("a"); l.href = URL.createObjectURL(blob);
-        l.setAttribute("download", `BACKUP_V26.json`); l.click();
-    }
-
-    function importBackup(input) {
-        const file = input.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
+        // LOGIN (SEM FORÇAR MAIÚSCULAS)
+        document.getElementById('btnLogin').addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+            const errorDiv = document.getElementById('loginError');
             try {
-                const data = JSON.parse(e.target.result);
-                db = data.db || []; units = data.units || ["GERAL"]; acts = data.acts || ["INSPEÇÃO"];
-                renderManagers(); saveAndRender();
-                alert("DADOS RESTAURADOS!");
-            } catch (err) { alert("ERRO NO BACKUP!"); }
-        };
-        reader.readAsText(file);
-    }
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (e) {
+                errorDiv.style.display = 'block';
+                errorDiv.innerText = "ERRO: " + e.code;
+            }
+        });
 
-    function conclude(id) { if(confirm("CONFIRMAR?")) { const idx = db.findIndex(i => i.id === id); db[idx].last = new Date().toISOString().split('T')[0]; saveAndRender(); } }
-    function delItem(id) { if(confirm("EXCLUIR?")) { db = db.filter(x => x.id !== id); saveAndRender(); } }
-    const toB64 = f => new Promise(r => { const fr = new FileReader(); fr.readAsDataURL(f); fr.onload = () => r(fr.result); });
-    
-    renderManagers();
-    saveAndRender();
-</script>
+        window.logout = () => signOut(auth);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                saveAndRender();
+            } else {
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('mainContent').style.display = 'none';
+            }
+        });
+
+        // --- LÓGICA DO SISTEMA ---
+        let db = JSON.parse(localStorage.getItem('inspections_v28')) || [];
+        let units = JSON.parse(localStorage.getItem('units_v28')) || ["GERAL"];
+        let acts = JSON.parse(localStorage.getItem('acts_v28')) || ["INSPEÇÃO"];
+        let currentSort = "ORIGINAL";
+
+        const saveAndRender = () => {
+            localStorage.setItem('inspections_v28', JSON.stringify(db));
+            localStorage.setItem('units_v28', JSON.stringify(units));
+            localStorage.setItem('acts_v28', JSON.stringify(acts));
+            renderManagers();
+            renderTable();
+        };
+
+        const renderManagers = () => {
+            const ul = document.getElementById('unitList'), al = document.getElementById('activityList');
+            const us = document.getElementById('unitSelect'), as = document.getElementById('activitySelect');
+            ul.innerHTML = al.innerHTML = '';
+            us.innerHTML = '<option value="">UNID...</option>';
+            as.innerHTML = '<option value="">ATIV...</option>';
+            units.forEach(u => {
+                ul.innerHTML += `<div class="tag">${u} <button onclick="delUnit('${u}')" style="background:none; border:none; color:red; cursor:pointer;">✕</button></div>`;
+                us.innerHTML += `<option value="${u}">${u}</option>`;
+            });
+            acts.forEach(a => {
+                al.innerHTML += `<div class="tag">${a} <button onclick="delAct('${a}')" style="background:none; border:none; color:red; cursor:pointer;">✕</button></div>`;
+                as.innerHTML += `<option value="${a}">${a}</option>`;
+            });
+        };
+
+        const renderTable = () => {
+            const body = document.getElementById('inventoryBody');
+            const filters = [
+                document.getElementById('f0').value.toLowerCase(), document.getElementById('f1').value.toLowerCase(),
+                document.getElementById('f2').value.toLowerCase(), document.getElementById('f3').value.toLowerCase(),
+                document.getElementById('f4').value.toLowerCase(), document.getElementById('fCad').value.toLowerCase(),
+                document.getElementById('fUlt').value.toLowerCase(), document.getElementById('fProx').value.toLowerCase()
+            ];
+
+            let count = { v: 0, r: 0, l: 0, a: 0, ok: 0 };
+            let displayDb = [...db];
+
+            if(currentSort === "VENCIMENTO") {
+                displayDb.sort((a,b) => {
+                    const nA = new Date(a.last); nA.setDate(nA.getDate() + a.period);
+                    const nB = new Date(b.last); nB.setDate(nB.getDate() + b.period);
+                    return nA - nB;
+                });
+            }
+
+            body.innerHTML = '';
+            displayDb.forEach(i => {
+                const nxt = new Date(i.last); nxt.setDate(nxt.getDate() + i.period);
+                const diff = Math.ceil((nxt - new Date().setHours(0,0,0,0))/86400000);
+                let stTxt = diff <= 0 ? "VENCIDO" : diff + "D";
+                let sc = "status-ok";
+
+                if(diff <= 0) { sc = "aviso-vencido"; count.v++; }
+                else if(diff <= 15) { sc = "aviso-vermelho"; count.r++; }
+                else if(diff <= 30) { sc = "aviso-laranja"; count.l++; }
+                else if(diff <= 60) { sc = "aviso-amarelo"; count.a++; }
+                else { count.ok++; }
+
+                const dtC = new Date(i.created).toLocaleDateString('PT-BR');
+                const dtU = new Date(i.last).toLocaleDateString('PT-BR');
+                const dtP = nxt.toLocaleDateString('PT-BR');
+
+                if(i.name.toLowerCase().includes(filters[0]) && i.unit.toLowerCase().includes(filters[1]) && 
+                   i.act.toLowerCase().includes(filters[2]) && stTxt.toLowerCase().includes(filters[3]) &&
+                   (i.rmaf||"").toLowerCase().includes(filters[4]) && dtC.includes(filters[5]) && 
+                   dtU.includes(filters[6]) && dtP.includes(filters[7])) {
+                    
+                    body.innerHTML += `<tr>
+                        <td><b>${i.name}</b></td><td>${i.unit}</td><td>${i.act}</td><td>${dtC}</td><td>${dtU}</td><td>${dtP}</td>
+                        <td><span class="status ${sc}">${stTxt}</span></td>
+                        <td>${i.anexo ? `<a href="${i.anexo}" target="_blank" class="btn-action" style="background:#0891B2; text-decoration:none;">V</a>` : '-'}</td>
+                        <td>${i.rmaf || "-"}</td>
+                        <td>
+                            <button onclick="conclude(${i.id})" class="btn-action" style="background:#059669">OK</button>
+                            <button onclick="delItem(${i.id})" class="btn-action" style="background:#991B1B">EX</button>
+                        </td>
+                    </tr>`;
+                }
+            });
+
+            document.getElementById('statsPanel').innerHTML = `
+                <div class="stat-box" style="background: var(--status-purple)">💜 VENCIDO: ${count.v}</div>
+                <div class="stat-box" style="background: var(--status-red)">❤️ < 15D: ${count.r}</div>
+                <div class="stat-box" style="background: var(--status-orange)">🧡 16-30D: ${count.l}</div>
+                <div class="stat-box" style="background: var(--status-yellow); color:#000">💛 31-60D: ${count.a}</div>
+                <div class="stat-box" style="background: var(--status-green)">💚 OK: ${count.ok}</div>
+            `;
+        };
+
+        // EVENTOS GLOBAIS
+        window.delUnit = (u) => { units = units.filter(x => x !== u); saveAndRender(); };
+        window.delAct = (a) => { acts = acts.filter(x => x !== a); saveAndRender(); };
+        window.conclude = (id) => { if(confirm("CONCLUIR?")) { const idx = db.findIndex(i => i.id === id); db[idx].last = new Date().toISOString().split('T')[0]; saveAndRender(); } };
+        window.delItem = (id) => { if(confirm("EXCLUIR?")) { db = db.filter(x => x.id !== id); saveAndRender(); } };
+
+        document.getElementById('btnAddUnit').onclick = () => { const v = document.getElementById('newUnitName').value.toUpperCase(); if(v){ units.push(v); document.getElementById('newUnitName').value=''; saveAndRender(); } };
+        document.getElementById('btnAddAct').onclick = () => { const v = document.getElementById('newActivityName').value.toUpperCase(); if(v){ acts.push(v); document.getElementById('newActivityName').value=''; saveAndRender(); } };
+        document.getElementById('btnToggleSort').onclick = () => { currentSort = currentSort === "ORIGINAL" ? "VENCIMENTO" : "ORIGINAL"; document.getElementById('sortLabel').innerText = currentSort; renderTable(); };
+        
+        document.getElementById('btnSaveItem').onclick = async () => {
+            const f = document.getElementById('pdfFile').files[0];
+            const item = {
+                id: Date.now(), name: document.getElementById('equip').value.toUpperCase(),
+                unit: document.getElementById('unitSelect').value, act: document.getElementById('activitySelect').value,
+                last: document.getElementById('lastDate').value, created: new Date().toISOString().split('T')[0],
+                period: parseInt(document.getElementById('period').value), rmaf: document.getElementById('rmaf').value.toUpperCase(),
+                anexo: f ? await new Promise(r => { const fr = new FileReader(); fr.readAsDataURL(f); fr.onload = () => r(fr.result); }) : null
+            };
+            if(item.name && item.last && item.period) { db.push(item); saveAndRender(); } else { alert("DADOS FALTANDO"); }
+        };
+
+        document.querySelectorAll('.filter-row').forEach(input => input.onkeyup = renderTable);
+
+        document.getElementById('btnExport').onclick = () => {
+            let csv = "EQUIPAMENTO;UNIDADE;ATIVIDADE;CADASTRO;ULTIMA;PROXIMA;RM/AF\n";
+            db.forEach(i => {
+                const nxt = new Date(i.last); nxt.setDate(nxt.getDate() + i.period);
+                csv += `${i.name};${i.unit};${i.act};${i.created};${i.last};${nxt.toISOString().split('T')[0]};${i.rmaf}\n`;
+            });
+            const b = new Blob([csv], { type: 'text/csv' });
+            const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = "INSPECOES.csv"; l.click();
+        };
+
+        document.getElementById('btnBackup').onclick = () => {
+            const b = new Blob([JSON.stringify({db, units, acts})], {type: "application/json"});
+            const l = document.createElement('a'); l.href = URL.createObjectURL(b); l.download = "BACKUP_PRO.json"; l.click();
+        };
+
+        document.getElementById('btnRestore').onclick = () => document.getElementById('importFile').click();
+        document.getElementById('importFile').onchange = (e) => {
+            const fr = new FileReader();
+            fr.onload = (ev) => { const d = JSON.parse(ev.target.result); db = d.db; units = d.units; acts = d.acts; saveAndRender(); alert("DADOS RESTAURADOS"); };
+            fr.readAsText(e.target.files[0]);
+        };
+    </script>
 </body>
 </html>
